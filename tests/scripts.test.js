@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-const shell = process.env.PATCHER_TEST_POWERSHELL || 'pwsh';
+const shell = process.env.PATCHER_TEST_POWERSHELL || (spawnSync('pwsh', ['-v']).status === 0 ? 'pwsh' : 'powershell');
 const quote = s => "'" + s.replaceAll("'", "''") + "'";
 function run(args) { return spawnSync(shell, ['-NoProfile', ...args], {encoding:'utf8'}); }
 function workspace() { return fs.mkdtempSync(path.join(os.tmpdir(), 'aside-script-test-')); }
@@ -35,7 +35,7 @@ test('launcher returns status success and forwards patch failure',()=>{
 for(const code of [0,7]) test('installer preserves previous data and propagates application exit '+code,()=>{
  const dir=workspace(),pkg=path.join(dir,'aside-ko-patcher-main'),dest=path.join(dir,'installed'),zip=path.join(dir,'package.zip');
  fixture(pkg,code);fs.mkdirSync(dest);fs.writeFileSync(path.join(dest,'sentinel.txt'),'keep me');
- let result=run(['-Command','Compress-Archive -LiteralPath '+quote(pkg)+' -DestinationPath '+quote(zip)]);
+ let result=run(['-Command','$ProgressPreference="SilentlyContinue"; Compress-Archive -LiteralPath '+quote(pkg)+' -DestinationPath '+quote(zip)]);
  assert.equal(result.status,0,result.stdout+result.stderr);
  result=run(['-File',path.join(root,'install.ps1'),'-InstallDir',dest,'-PackageArchive',zip]);
  assert.equal(result.status,code,result.stdout+result.stderr);
@@ -50,7 +50,7 @@ test('invalid package fails before existing installation is moved',()=>{
  const dir=workspace(),pkg=path.join(dir,'aside-ko-patcher-main'),dest=path.join(dir,'installed'),zip=path.join(dir,'package.zip');
  fs.mkdirSync(pkg);fs.writeFileSync(path.join(pkg,'wrong.txt'),'invalid');
  fs.mkdirSync(dest);fs.writeFileSync(path.join(dest,'sentinel.txt'),'keep me');
- assert.equal(run(['-Command','Compress-Archive -LiteralPath '+quote(pkg)+' -DestinationPath '+quote(zip)]).status,0);
+ assert.equal(run(['-Command','$ProgressPreference="SilentlyContinue"; Compress-Archive -LiteralPath '+quote(pkg)+' -DestinationPath '+quote(zip)]).status,0);
  const result=run(['-File',path.join(root,'install.ps1'),'-InstallDir',dest,'-PackageArchive',zip]);
  assert.equal(result.status,1,result.stdout+result.stderr);
  assert.equal(fs.readFileSync(path.join(dest,'sentinel.txt'),'utf8'),'keep me');

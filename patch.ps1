@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 try {
   $Node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $Node) { throw 'Node.js 18 or newer is required. Install it from https://nodejs.org and retry.' }
-  $Major = & $Node.Source -p 'process.versions.node.split(".")[0]'
+  $Major = (& $Node.Source -v).TrimStart('v').Split('.')[0]
   if ($LASTEXITCODE -ne 0 -or [int]$Major -lt 18) { throw 'Node.js 18 or newer is required.' }
   $Patcher = Join-Path $PSScriptRoot 'src\patcher.js'
   if (-not (Test-Path -LiteralPath $Patcher -PathType Leaf)) { throw "Patcher not found: $Patcher" }

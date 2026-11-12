@@ -5,10 +5,11 @@ param(
   [string]$PackageArchive
 )
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 try {
   $Node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $Node) { throw 'Node.js 18 or newer is required. Install it from https://nodejs.org and retry.' }
-  $Major = & $Node.Source -p 'process.versions.node.split(".")[0]'
+  $Major = (& $Node.Source -v).TrimStart('v').Split('.')[0]
   if ($LASTEXITCODE -ne 0 -or [int]$Major -lt 18) { throw 'Node.js 18 or newer is required.' }
 
   $InstallDir = [IO.Path]::GetFullPath($InstallDir).TrimEnd([IO.Path]::DirectorySeparatorChar)
